@@ -1,20 +1,37 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-import {noteStyle} from './NoteStyles.js';
+import styles from './Note.module.css';
 
 export default class Note extends Component {
-  static propTypes = {
-    text: PropTypes.string
-  };
+  constructor(props) {
+    super(props);
+    this.state = {
+      value: 'Enter text here.'
+    };
 
-  static defaultProps = {};
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleChange(event) {
+    this.setState({value: event.target.value});
+  }
+
+  handleSubmit(event) {
+    alert('Note was submitted: ' + this.state.value);
+    event.preventDefault();
+  }
 
   render() {
     return (
-       <div style={noteStyle}>
-          {this.props.text}
-       </div>
+      <form onSubmit={this.handleSubmit}>
+        <label>
+          Note:
+          <textarea value={this.state.value} onChange={this.handleChange} />
+        </label>
+        <input type="submit" value="Submit" />
+      </form>
     );
   }
 }

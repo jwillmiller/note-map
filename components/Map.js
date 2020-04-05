@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import GoogleMapReact from 'google-map-react';
 
 import Note from './Note.js';
+import styles from './Map.module.css'
 
 const API_KEY = process.env.GMAPS_API_KEY;
 //const AnyReactComponent = ({ text }) => <div>{text}</div>;
@@ -29,7 +30,7 @@ class Map extends Component {
 
     render() {
         return (
-            <div style={{ height: '100vh', width: '100%' }}>
+            <div className={styles.mapContainerStyle}>
                 <GoogleMapReact
                     bootstrapURLKeys={{ key: API_KEY }}
                     defaultCenter={this.props.center}

@@ -36,12 +36,14 @@ export default () => {
   }, 0);
  
  return (
-    <>
-      <input id="noteinput" style={{ width: '80%' }} type="text" placeholder="Enter a new note" />
-      <button onClick={() => handleClick()}>Add note</button>
-      <Notes data={data} />
+    <div>
+      <>
+        <input id="noteinput" style={{ width: '80%' }} type="text" placeholder="Enter a new note" />
+        <button onClick={() => handleClick()}>Add note</button>
+        <Notes data={data} />
+      </>
       <Map/>
-    </>
+    </div>
   );
 
 };
