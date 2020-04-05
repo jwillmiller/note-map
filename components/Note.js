@@ -1,37 +1,58 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
 
-import styles from './Note.module.css';
+const Note = ({
+  childRef,
+  text,
+  type,
+  placeholder,
+  children,
+  ...props 
+}) => {
 
-export default class Note extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      value: 'Enter text here.'
-    };
+  const [isEditing, setEditing] = useState(false);
 
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
-  }
+  useEffect(() => {
+    if (childRef && childRef.current && isEditing === true) {
+      childRef.current.focus();
+    }
+  }, [isEditing, childRef]);
 
-  handleChange(event) {
-    this.setState({value: event.target.value});
-  }
+  // event handler
+  const handleKeyDown = (event, type) => {
+    const { key } = event;
+    const keys = ["Escape", "Tab"];
+    const enterKey = "Enter";
+    const allKeys = [...keys, enterKey];
 
-  handleSubmit(event) {
-    alert('Note was submitted: ' + this.state.value);
-    event.preventDefault();
-  }
+    // for textarea only escape and tab change the state
+    // for all others, escape, tab or enter will change the state
+    if (
+      (type === "textarea" && keys.indexOf(key) > -1) ||
+      (type !== "textarea" && allKeys.indexOf(key) > -1)
+    ) {
+      setEditing(false);
+    }
+  };
 
-  render() {
-    return (
-      <form onSubmit={this.handleSubmit}>
-        <label>
-          Note:
-          <textarea value={this.state.value} onChange={this.handleChange} />
-        </label>
-        <input type="submit" value="Submit" />
-      </form>
-    );
-  }
-}
+  return (
+    <section {...props}>
+      {isEditing ? ( // if isEditing, display children (input or textarea)
+        <div onBlur={() => setEditing(false)}
+        onKeyDown={e => handleKeyDown(e, type)}
+        >
+          {children}
+        </div>
+      ) : ( // else, display a label (placeholder)
+        <div onClick={() => setEditing(true)}
+        >
+          <span>
+            {text || placeholder || "Editable content"}
+          </span>
+        </div>
+      )}
+    </section>
+  );
+};
+
+
+export default Note;

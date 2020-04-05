@@ -1,15 +1,14 @@
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import PropTypes from 'prop-types';
 import GoogleMapReact from 'google-map-react';
 
-import Note from './Note.js';
 import styles from './Map.module.css'
 
 const API_KEY = process.env.GMAPS_API_KEY;
-//const AnyReactComponent = ({ text }) => <div>{text}</div>;
+const BasicPin = ({ text }) => <div>{text}</div>;
 
 class Map extends Component {
-
+    
     static propTypes = {
         center: PropTypes.array,
         zoom: PropTypes.number,
@@ -36,8 +35,15 @@ class Map extends Component {
                     defaultCenter={this.props.center}
                     defaultZoom={this.props.zoom}
                 >
-                    <Note lat={37.75} lng={-122.37} text={'Note 1'} /* Oakland, CA */ />
-                    <Note {...this.props.noteCoords} text={'Note 2'} /* SF, CA */ />
+                    <BasicPin 
+                        lat={37.75} /* Oakland, CA */ 
+                        lng={-122.37} 
+                        text={"PIN1"} 
+                    />
+                    <BasicPin
+                        {...this.props.noteCoords}
+                        text={"PIN2"}
+                    />
                 </GoogleMapReact>
             </div>
         );
