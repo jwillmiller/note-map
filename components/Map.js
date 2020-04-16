@@ -1,58 +1,76 @@
-import React, { Component, useState } from 'react';
-import PropTypes from 'prop-types';
+import React, { Component } from 'react';
 import GoogleMapReact from 'google-map-react';
-import SvgIcon from '@material-ui/core/SvgIcon';
 
+import BasicPin from './BasicPin.js';
 import styles from './Map.module.css'
 
 const API_KEY = process.env.GMAPS_API_KEY;
 
-//const BasicPin = ({ text }) => <div>{text}</div>;
-function BasicPin(props) {
-    return (
-        <SvgIcon {...props}>
-            <path fill="currentColor" d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" />
-        </SvgIcon>
-    );
-}
+const Marker = (props) => {
+    // tip of the pin is the 'center' of the marker
+    const MarkerStyle = {
+        position: 'absolute',
+        transform: 'translate(-50%, -100%)'
+    }
 
+    return (
+        <BasicPin
+            style = {MarkerStyle}
+            color = {props.color}
+            lat = {props.lat}
+            lng = {props.lng}
+        />
+    )
+}
 
 class Map extends Component {
     constructor(props) {
         super(props);
+
         this.state = {
             center: [37.78, -122.43],
             zoom: 11,
             draggable: true,
             lat: 37.78,
-            lng: -122.43
+            lng: -122.43,
+            markers: [],
         };
 
         // for callbacks
-        this.onCircleInteraction = this.onCircleInteraction.bind(this);
-        this.onCircleInteraction3 = this.onCircleInteraction3.bind(this);
+        this.onChildInteractionCallback = this.onChildInteractionCallback.bind(this);
+        this.onChildUpCallback = this.onChildUpCallback.bind(this);
         this._onChange = this._onChange.bind(this);
     }
 
-    /* maybe add:
-        static propTypes = {};
-        static defaultProps = {};
-    */
+    //static propTypes = {};
+    //static defaultProps = {};
 
-    onCircleInteraction(childKey, childProps, mouse) {
-        this.setState({
-            draggable: false,
-            lat: mouse.lat,
-            lng: mouse.lng
-        });
-
-        console.log('onCircleInteraction called with', childKey, childProps, mouse);
+    // button stuff
+    addMarker = (e) => {
+        this.setState((prevState) => ({
+            markers: [...prevState.markers, {lat: prevState.center.lat, lng: prevState.center.lng}],
+        }));
     }
 
-    onCircleInteraction3(childKey, childProps, mouse) {
+    onChildInteractionCallback(childKey, childProps, mouse) {
+        // fix map in place
+        this.setState({draggable: false,});
+
+        // update lat, lng of marker that was clicked
+        let markers = [...this.state.markers]; // shallow copy array
+        let marker = {...markers[childKey]}; // shallow copy element to modify
+        marker.lat = mouse.lat; // update position
+        marker.lng = mouse.lng; //
+        markers[childKey] = marker; // replace element in array
+        this.setState({markers: markers});
+
+        // logging
+        console.log('onChildInteractionCallback called with', childKey, childProps, mouse);
+    }
+
+    onChildUpCallback(childKey, childProps, mouse) {
         this.setState({draggable: true});
-        // function is just a stub to test callbacks  
-        console.log('onCircleInteraction called with', childKey, childProps, mouse);
+        console.log('onChildUpCallback called with', childKey, childProps, mouse);
     }
 
     _onChange = ({center, zoom}) => {
@@ -64,26 +82,32 @@ class Map extends Component {
 
     render() {
         return (
-            <div className={styles.mapContainerStyle}>
-                <GoogleMapReact 
-                    bootstrapURLKeys={{ key: API_KEY }}
-                    draggable={this.state.draggable}
-                    onChange={this._onChange}
-                    center={this.state.center}
-                    zoom={this.state.zoom}
-                    onChildMouseDown={this.onCircleInteraction}
-                    onChildMouseUp={this.onCircleInteraction3}
-                    onChildMouseMove={this.onCircleInteraction}
-                    onChildClick={() => console.log('child click')}
-                    onClick={() => console.log('mapClick')}
-                >
-                    <BasicPin 
-                        color = "secondary" // red
-                        lat = {this.state.lat}
-                        lng = {this.state.lng}
-                    />
-                </GoogleMapReact>
-            </div>
+            <div>
+                <button onClick={ this.addMarker }>Add new pin</button>
+                <div className={styles.mapContainerStyle}>
+                    <GoogleMapReact 
+                        bootstrapURLKeys={{ key: API_KEY }}
+                        draggable={this.state.draggable}
+                        onChange={this._onChange}
+                        center={this.state.center}
+                        zoom={this.state.zoom}
+                        onChildMouseDown={this.onChildInteractionCallback}
+                        onChildMouseUp={this.onChildUpCallback}
+                        onChildMouseMove={this.onChildInteractionCallback}
+                        onChildClick={() => console.log('child click, parent method')}
+                        onClick={() => console.log('mapClick')}
+                    >
+                        {this.state.markers.map((val, idx) => 
+                            (<Marker
+                                key = {idx} // int value
+                                color = "secondary" // red
+                                lat = {val.lat}
+                                lng = {val.lng}
+                            />)
+                        )}
+                    </GoogleMapReact>
+                </div>
+            </div> 
         );
     }
 }
