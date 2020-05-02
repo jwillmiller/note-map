@@ -23,7 +23,7 @@ const Marker = (props) => {
                 lng = {props.lng}
             />
             {props.showNote && (
-                <PinnedNote/>
+                <PinnedNote value={props.noteValue} onChange={props.onChange} />
             )}
         </React.Fragment>
     )
@@ -44,7 +44,7 @@ class Map extends Component {
         };
 
         // for callbacks
-        this.onChildInteractionCallback = this.onChildInteractionCallback.bind(this);
+        this.onChildDragCallback = this.onChildDragCallback.bind(this);
         this.onChildUpCallback = this.onChildUpCallback.bind(this);
         this._onChildClick = this._onChildClick.bind(this);
         this._onChange = this._onChange.bind(this);
@@ -56,14 +56,19 @@ class Map extends Component {
     // add pin button
     addMarker = (e) => {
         this.setState((prevState) => ({
-            markers: [...prevState.markers, {lat: prevState.center.lat, lng: prevState.center.lng, showNote: false}],
+            markers: [...prevState.markers, 
+                {lat: prevState.center.lat, 
+                 lng: prevState.center.lng, 
+                 showNote: false,
+                 noteValue: ""
+                }],
         }));
     }
 
     // GMaps API callback to allow draggable markers.
     // When child element (marker) is interacted with, is location is updated
     // with the mouse.
-    onChildInteractionCallback(childKey, childProps, mouse) {
+    onChildDragCallback(childKey, childProps, mouse) {
         // fix map in place
         this.setState({draggable: false,});
 
@@ -76,7 +81,7 @@ class Map extends Component {
         this.setState({markers: markers});
 
         // logging
-        console.log('onChildInteractionCallback called with', childKey, childProps, mouse);
+        console.log('onChildDragCallback called with', childKey, childProps, mouse);
     }
 
     // GMaps API callback for end of marker-dragging event
@@ -100,6 +105,9 @@ class Map extends Component {
         marker.showNote = show; // show note
         markers[childKey] = marker; // replace element in array
         this.setState({markers: markers});
+
+        // logging
+        console.log('child click');
     }
 
     // GMaps API callback allowing map to be dragged and zoomed
@@ -108,6 +116,18 @@ class Map extends Component {
             center: center,
             zoom: zoom,
         });
+    }
+
+    // on note editing
+    onNoteEdit = (e, key) => {
+        // update noteValue prop of marker that was clicked
+        let markers = [...this.state.markers]; // shallow copy array
+        let marker = {...markers[key]}; // shallow copy element to modify
+        marker.noteValue = e.target.value; // show note
+        markers[key] = marker; // replace element in array
+        this.setState({markers: markers});
+
+        console.log('note ', key, ' edited');
     }
 
     render() {
@@ -121,9 +141,8 @@ class Map extends Component {
                         onChange={this._onChange}
                         center={this.state.center}
                         zoom={this.state.zoom}
-                        onChildMouseDown={this.onChildInteractionCallback}
                         onChildMouseUp={this.onChildUpCallback}
-                        onChildMouseMove={this.onChildInteractionCallback}
+                        onChildMouseMove={this.onChildDragCallback}
                         onChildClick={this._onChildClick}
                         onClick={() => console.log('mapClick')}
                     >
@@ -134,6 +153,8 @@ class Map extends Component {
                                 lat = {val.lat}
                                 lng = {val.lng}
                                 showNote = {val.showNote}
+                                noteValue = {val.noteValue}
+                                onChange = {(e) => this.onNoteEdit(event, idx)} // possible issue here with repetitive rerendering
                             />)
                         )}
                     </GoogleMapReact>
