@@ -7,7 +7,7 @@ class PinnedNote extends Component {
 
     render() {
         return (
-            <textarea value={this.props.value} onChange={this.props.onChange} />
+            <textarea value={this.props.value} />
         );
     }
 }

@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import GoogleMapReact from 'google-map-react';
 
 import BasicPin from './BasicPin.js';
-import PinnedNote from './PinnedNote.js';
-import styles from './Map.module.css'
+import { connect } from 'react-redux';
+import { addNote, updateNotePosition, updateMapCenter, updateMapZoom } from '../redux/actions/actions';
 
 const API_KEY = process.env.GMAPS_API_KEY;
 
@@ -11,157 +11,99 @@ const Marker = (props) => {
     // tip of the pin is the 'center' of the marker
     const MarkerStyle = {
         position: 'absolute',
-        transform: 'translate(-50%, -100%)'
+        transform: 'translate(-50%, -100%)',
+        height: 40,
+        width: 40,
     }
 
     return (
-        <React.Fragment>
+        <div>
             <BasicPin
                 style = {MarkerStyle}
                 color = {props.color}
                 lat = {props.lat}
                 lng = {props.lng}
             />
-            {props.showNote && (
-                <PinnedNote value={props.noteValue} onChange={props.onChange} />
-            )}
-        </React.Fragment>
+        </div>
     )
 }
 
+function Map(props) {
+    const [draggable, setDraggable] = useState(true);
+    const [center, setCenter] = useState([]);
+    const [zoom, setZoom] = useState();
+    const [notes, setNotes] = useState([]);
 
-class Map extends Component {
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            center: [37.78, -122.43],
-            zoom: 11,
-            draggable: true,
-            lat: 37.78,
-            lng: -122.43,
-            markers: [],
-        };
-
-        // for callbacks
-        this.onChildDragCallback = this.onChildDragCallback.bind(this);
-        this.onChildUpCallback = this.onChildUpCallback.bind(this);
-        this._onChildClick = this._onChildClick.bind(this);
-        this._onChange = this._onChange.bind(this);
+    const _onChange = ({center, zoom}) => {
+        props.updateMapCenter(center.lat, center.lng);
+        props.updateMapZoom(zoom);
     }
 
-    //static propTypes = {};
-    //static defaultProps = {};
-
-    // add pin button
-    addMarker = (e) => {
-        this.setState((prevState) => ({
-            markers: [...prevState.markers, 
-                {lat: prevState.center.lat, 
-                 lng: prevState.center.lng, 
-                 showNote: false,
-                 noteValue: ""
-                }],
-        }));
+    const onChildUpCallback = (childKey, childProps, mouse) => {
+        setDraggable(true);
     }
 
-    // GMaps API callback to allow draggable markers.
-    // When child element (marker) is interacted with, is location is updated
-    // with the mouse.
-    onChildDragCallback(childKey, childProps, mouse) {
+    const onChildDragCallback = (childKey, childProps, mouse) => {
         // fix map in place
-        this.setState({draggable: false,});
+        setDraggable(false);
 
-        // update lat, lng of marker that was clicked
-        let markers = [...this.state.markers]; // shallow copy array
-        let marker = {...markers[childKey]}; // shallow copy element to modify
-        marker.lat = mouse.lat; // update position
-        marker.lng = mouse.lng; //
-        markers[childKey] = marker; // replace element in array
-        this.setState({markers: markers});
-
-        // logging
-        console.log('onChildDragCallback called with', childKey, childProps, mouse);
+        // redux
+        props.updateNotePosition(childKey, mouse.lat, mouse.lng);
     }
 
-    // GMaps API callback for end of marker-dragging event
-    // On mouse up, map becomes draggable again
-    onChildUpCallback(childKey, childProps, mouse) {
-        this.setState({draggable: true});
-
-        // logging
-        console.log('onChildUpCallback called with', childKey, childProps, mouse);
+    // center map on marker that was clicked
+    const _onChildClick = (childKey, childProps, mouse) => {
+        let clickedNote = props.notes[childKey];
+        props.updateMapCenter(clickedNote.lat, clickedNote.lng);
     }
 
-    _onChildClick = (childKey, childProps) => {
-        let show = true; // assume the note is NOT showing
-        if (this.state.markers[childKey].showNote === true) { // if it is showing, we stop it
-            show = false;
-        }
+    // state update from redux on render and props update
+    useEffect(() => {
+        setCenter(props.center);
+        setZoom(props.zoom);
+        setNotes(props.notes);
+    }, [props]);
 
-        // update showNote prop of marker that was clicked
-        let markers = [...this.state.markers]; // shallow copy array
-        let marker = {...markers[childKey]}; // shallow copy element to modify
-        marker.showNote = show; // show note
-        markers[childKey] = marker; // replace element in array
-        this.setState({markers: markers});
-
-        // logging
-        console.log('child click');
-    }
-
-    // GMaps API callback allowing map to be dragged and zoomed
-    _onChange = ({center, zoom}) => {
-        this.setState({
-            center: center,
-            zoom: zoom,
-        });
-    }
-
-    // on note editing
-    onNoteEdit = (e, key) => {
-        // update noteValue prop of marker that was clicked
-        let markers = [...this.state.markers]; // shallow copy array
-        let marker = {...markers[key]}; // shallow copy element to modify
-        marker.noteValue = e.target.value; // show note
-        markers[key] = marker; // replace element in array
-        this.setState({markers: markers});
-
-        console.log('note ', key, ' edited');
-    }
-
-    render() {
-        return (
-            <div>
-                <button onClick={ this.addMarker }>Add new pin</button>
-                <div className={styles.mapContainerStyle}>
-                    <GoogleMapReact 
-                        bootstrapURLKeys={{ key: API_KEY }}
-                        draggable={this.state.draggable}
-                        onChange={this._onChange}
-                        center={this.state.center}
-                        zoom={this.state.zoom}
-                        onChildMouseUp={this.onChildUpCallback}
-                        onChildMouseMove={this.onChildDragCallback}
-                        onChildClick={this._onChildClick}
-                        onClick={() => console.log('mapClick')}
-                    >
-                        {this.state.markers.map((val, idx) => 
-                            (<Marker
-                                key = {idx} // int value
-                                color = "secondary" // red
-                                lat = {val.lat}
-                                lng = {val.lng}
-                                showNote = {val.showNote}
-                                noteValue = {val.noteValue}
-                                onChange = {(e) => this.onNoteEdit(event, idx)} // possible issue here with repetitive rerendering
-                            />)
-                        )}
-                    </GoogleMapReact>
-                </div>
-            </div> 
-        );
-    }
+    return (
+        <div className="map">
+            <div className="google-map-react">
+                <GoogleMapReact 
+                    bootstrapURLKeys={{ key: API_KEY }}
+                    draggable={draggable}
+                    onChange={_onChange}
+                    center={center}
+                    zoom={zoom}
+                    onChildMouseUp={onChildUpCallback}
+                    onChildMouseMove={onChildDragCallback}
+                    onChildClick={_onChildClick}
+                >
+                    {notes.map((val, idx) => 
+                        (<Marker
+                            key = {idx} // int value
+                            color = "secondary" // red
+                            lat = {val.lat}
+                            lng = {val.lng}
+                        />)
+                    )}
+                </GoogleMapReact>
+            </div>
+        </div> 
+    );
 }
 
-export default Map;
+const mapStateToProps = state => {
+    return {
+        notes: state.notes,
+        center: state.center,
+        zoom: state.zoom
+    };
+}
+
+const mapDispatchToProps = {
+    addNote: addNote,
+    updateNotePosition: updateNotePosition,
+    updateMapCenter: updateMapCenter,
+    updateMapZoom: updateMapZoom
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Map);

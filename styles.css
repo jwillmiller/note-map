@@ -1,1 +1,53 @@
 /* this is for global styles */
+.container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.top-header {
+    padding: 10px;
+    background-color: aliceblue;
+    text-align: center;
+    font-size: 28px;
+    height: 64px;
+}
+
+.map-container {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+}
+
+.map {
+    width: 75%;
+    flex: 1 0 auto;
+}
+
+.google-map-react {
+    height: 100%;
+    width: 100%;
+}
+
+.sidebar {
+    /* background-color: aliceblue;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19); */
+    margin: 10px;
+    width: 25%;
+    overflow-y: scroll;
+}
+
+.note-body {
+    outline: none;
+    resize: none;
+    border: none;
+    overflow: hidden;
+}
+
+.note-title {
+    outline: none;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+}
